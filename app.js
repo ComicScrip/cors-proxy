@@ -1,46 +1,13 @@
-const express = require('express');
-const cors = require('cors');
-var proxy = require('express-http-proxy');
+// Listen on a specific host via the HOST environment variable
+var host = process.env.HOST || '0.0.0.0';
+// Listen on a specific port via the PORT environment variable
+var port = process.env.PORT || 5000;
 
-const { inTestEnv, PORT } = require('./env');
-
-const app = express();
-
-// pre-route middlewares
-app.use(cors());
-
-app.use(express.json());
-app.use(
-  '/proxy',
-  proxy((req) => {
-    console.log(JSON.stringify(req.url, null, 2));
-    return req.url;
+var cors_proxy = require('cors-anywhere');
+cors_proxy
+  .createServer({
+    originWhitelist: [], // Allow all origins
   })
-);
-
-// post-route middlewares
-app.set('x-powered-by', false);
-
-// server setup
-const server = app.listen(PORT, () => {
-  if (!inTestEnv) {
-    console.log(`Server running on port ${PORT}`);
-  }
-});
-
-// process setup
-process.on('unhandledRejection', (error) => {
-  console.error('unhandledRejection', JSON.stringify(error), error.stack);
-  process.exit(1);
-});
-process.on('uncaughtException', (error) => {
-  console.error('uncaughtException', JSON.stringify(error), error.stack);
-  process.exit(1);
-});
-process.on('beforeExit', () => {
-  app.close((error) => {
-    if (error) console.error(JSON.stringify(error), error.stack);
+  .listen(port, host, function () {
+    console.log('Running CORS Anywhere on ' + host + ':' + port);
   });
-});
-
-module.exports = server;
